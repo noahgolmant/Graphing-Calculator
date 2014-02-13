@@ -12,68 +12,26 @@ public class Expression {
     private ExpNode endNode;
     private String baseFunction, parsedFunction;
     
+    // Tests if a given string is a double.
     public static boolean isDouble(String s)
     {
         try {
-            double i = Double.parseDouble(s);
+            Double.parseDouble(s);
             return true;
         } catch(NumberFormatException e) {
             return false;
         }
     }
     
-    //Shunting yard parser implementation
-    // returns function in reverse polish notation to be used by the binary expression tree
-    public String parseFunction(String input)
+    // Solves a function in Reverse Polish Notation by creating a binary
+    // expression tree object.
+    public static double solve(String parsedFunc)
     {
-        //Create output and operator stack
-        String parsedFunc = "";
-        Stack<Character> operatorStack = new Stack<Character>();
-        
-        for(String c : input.split(" "))
-        {
-            //If the next char is an double, automatically add it to the output stream
-            if(Expression.isDouble(c))
-            {
-                parsedFunc += Double.parseDouble(c) + " ";
-            } else if(OpNode.isValidOperator(c)) //If the next char is an operator...
-            {
-                // If there is an operator on the stack and the new operator's precedence
-                // is less than or equal to the one on the stack, then pop the stack
-                // until we can add the higher-precedence operator.
-                // This way, higher-precedence operations will always be performed on
-                // the correct number pairs before other ones
-                
-                // e.g. -- when doing 2 + 5 * 10, we multiply 5*10 then add 2 to
-                //         the result of that.
-                char op = c.toCharArray()[0];
-                while(!operatorStack.isEmpty() && OpNode.getOperatorPrecedence(op) <= OpNode.getOperatorPrecedence(operatorStack.peek()))
-                {
-                    parsedFunc += operatorStack.pop() + " ";
-                }
-                operatorStack.push(op);
-            }
-        }
-        
-        // Add any remaining operators to be applied to the function to the end.
-        while(!operatorStack.isEmpty())
-        {
-            parsedFunc += operatorStack.pop() + " ";
-        }
-        
-        return parsedFunc;
-    }
-    
-    public Expression(String function)
-    {
-        this.baseFunction = function;
-        this.parsedFunction = parseFunction(function);
-        
         Stack<ExpNode> nodeStack = new Stack<>();
         ExpNode leftNode, rightNode;
         double numVal;
         // go through each part of the function
-        for(String c : parsedFunction.split(" "))
+        for(String c : parsedFunc.split(" "))
         {
             // If the node is a number, immediately add it to the stack.
             if(Expression.isDouble(c))
@@ -90,7 +48,7 @@ public class Expression {
                     
                     nodeStack.push(new OpNode(c.toCharArray()[0], leftNode, rightNode));
                 } catch(EmptyStackException e) {
-                    return;
+                    return Double.NaN;
                 }
             }
         }
@@ -98,12 +56,97 @@ public class Expression {
         // This end node which contains the entire expression tree.
         // When the method is called to solve it, it will recursively calculate
         // the value of each other node in it, giving the correct answer.
-        this.endNode = nodeStack.peek();
+        return nodeStack.peek().value();
     }
     
-    public double value()
+    public static double solveWithX(String parsedFunc, double x)
     {
-        return this.endNode.value();
+        //first, see if the x has a coefficient. if so, replace with a multiplier.
+        for(String s : parsedFunc.split(" "))
+        {
+            // only use terms containing x and some other number.
+            if(!s.contains("x") || s.length() == 1)
+                continue;
+            
+            // TODO
+            // fix this because you would be modifying "s" not parsedFunc if you
+            // try to replace anything here
+        }
+        
+        return Expression.solve(parsedFunc.replaceAll("x", Double.toString(x)));
+    }
+    
+    //Shunting yard parser implementation
+    // returns function in reverse polish notation to be used by the binary expression tree
+    public String parseFunction(String input)
+    {
+        //Create output and operator stack
+        String parsedFunc = "";
+        Stack<Character> operatorStack = new Stack<Character>();
+        
+        for(String c : input.split(" "))
+        {
+            //If the next char is a double, automatically add it to the output stream
+            if(Expression.isDouble(c))
+            {
+                parsedFunc += Double.parseDouble(c) + " ";
+            } else if(c.contains("x")) // Dealing with variables
+            {
+                // If it is just x, add it to our parsed function normally.
+                if(c.length() == 1)
+                {
+                    parsedFunc += c + " ";
+                } else
+                // Otherwise, separate into two expressions
+                // e.g. -- with c of 2x, separate into 2 * x
+                {
+                    // Get the number leading up to x
+                    // i.e. the 12 from 12x
+                    String numStr = c.substring(0, c.indexOf("x"));
+                    parsedFunc += numStr + " x * ";
+                }
+            } else if(OpNode.isValidOperator(c)) //If the next char is an operator...
+            {
+                // If there is an operator on the stack and the new operator's precedence
+                // is less than or equal to the one on the stack, then pop the stack
+                // until we can add the higher-precedence operator.
+                // This way, higher-precedence operations will always be performed on
+                // the correct numbers before other operands
+                
+                // e.g. -- when doing 2 + 5 * 10, we multiply 5*10 then add 2 to
+                //         the result of that.
+                char op = c.toCharArray()[0];
+                while(!operatorStack.isEmpty() && OpNode.getOperatorPrecedence(op) <= OpNode.getOperatorPrecedence(operatorStack.peek()))
+                {
+                    parsedFunc += operatorStack.pop() + " ";
+                }
+                operatorStack.push(op);
+            } // TODO: add handler for if it isn't a valid operator or number
+        }
+        
+        // Add any remaining operators to be applied to the function to the end.
+        while(!operatorStack.isEmpty())
+        {
+            parsedFunc += operatorStack.pop() + " ";
+        }
+        
+        return parsedFunc;
+    }
+    
+    public Expression(String function)
+    {
+        this.baseFunction = function;
+        this.parsedFunction = parseFunction(function);
+    }
+    
+    public double solve()
+    {
+        return Expression.solve(parsedFunction);
+    }
+    
+    public double solveWithX(double x)
+    {
+        return Expression.solve(parsedFunction.replaceAll("x", Double.toString(x)));
     }
     
     public String getBaseFunction()
