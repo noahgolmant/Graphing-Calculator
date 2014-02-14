@@ -11,12 +11,13 @@ public class Expression {
     
     private ExpNode endNode;
     private String baseFunction, parsedFunction;
+    private double solvedFunction;
     
     // Tests if a given string is a double.
-    public static boolean isDouble(String s)
+    public static boolean isDouble(String c)
     {
         try {
-            Double.parseDouble(s);
+            Double.parseDouble(c);
             return true;
         } catch(NumberFormatException e) {
             return false;
@@ -29,7 +30,7 @@ public class Expression {
     {
         Stack<ExpNode> nodeStack = new Stack<>();
         ExpNode leftNode, rightNode;
-        double numVal;
+        double numVal = 0.0;
         // go through each part of the function
         for(String c : parsedFunc.split(" "))
         {
@@ -84,6 +85,7 @@ public class Expression {
         String parsedFunc = "";
         Stack<Character> operatorStack = new Stack<Character>();
         
+
         for(String c : input.split(" "))
         {
             //If the next char is a double, automatically add it to the output stream
@@ -116,12 +118,28 @@ public class Expression {
                 // e.g. -- when doing 2 + 5 * 10, we multiply 5*10 then add 2 to
                 //         the result of that.
                 char op = c.toCharArray()[0];
-                while(!operatorStack.isEmpty() && OpNode.getOperatorPrecedence(op) <= OpNode.getOperatorPrecedence(operatorStack.peek()))
+                while(!operatorStack.isEmpty() && 
+                       operatorStack.peek() != '(' &&
+                       operatorStack.peek() != ')' &&
+                       OpNode.getOperatorPrecedence(op) <= OpNode.getOperatorPrecedence(operatorStack.peek()))
                 {
                     parsedFunc += operatorStack.pop() + " ";
                 }
                 operatorStack.push(op);
-            } // TODO: add handler for if it isn't a valid operator or number
+            } else if(c.equals("("))
+            {
+                operatorStack.push(c.toCharArray()[0]);
+            } else if(c.equals(")"))
+            {
+                while(operatorStack.peek() != '(')
+                {
+                    parsedFunc += operatorStack.pop() + " ";
+                }
+                
+                // pop the left parenthesis off the stack, but don't add it
+                // to the output.
+                operatorStack.pop();
+            }
         }
         
         // Add any remaining operators to be applied to the function to the end.
@@ -137,11 +155,13 @@ public class Expression {
     {
         this.baseFunction = function;
         this.parsedFunction = parseFunction(function);
+        if(!this.parsedFunction.contains("x"))
+            this.solvedFunction = Expression.solve(parsedFunction);
     }
     
     public double solve()
     {
-        return Expression.solve(parsedFunction);
+        return this.solvedFunction;
     }
     
     public double solveWithX(double x)

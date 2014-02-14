@@ -18,13 +18,13 @@ public class OpNode extends ExpNode{
     //operators with associated precedenc according to order of operations
     private static HashMap<Character, Integer> operators = new HashMap<Character, Integer>()
     {{
-        put('(', 3);
-        put(')', 3);
+        put('^', 3);
         put('*', 2);
         put('/', 2);
         put('+', 1);
         put('-', 1);
     }};
+
    
     /**
      * Creates an operator node with two other nodes attached to it
@@ -54,6 +54,7 @@ public class OpNode extends ExpNode{
             case '-': return leftVal - rightVal;
             case '*': return leftVal * rightVal;
             case '/': return leftVal / rightVal;
+            case '^': return Math.pow(leftVal, rightVal);
             default:  return Double.NaN;
         }
     }
@@ -69,14 +70,21 @@ public class OpNode extends ExpNode{
 
     static boolean isValidOperator(String c)
     {
-        if(c.length() > 1)
-            return false;
-        
         return OpNode.operators.containsKey(c.toCharArray()[0]);
     }
     
     static int getOperatorPrecedence(char c)
     {
+        // this way the precedence will always be lower and we
+        // don't have to deal with parens
         return OpNode.operators.get(c);
+    }
+    
+    private class Ex extends Exception
+    {
+        Ex(String message)
+        {
+            super(message);
+        }
     }
 }

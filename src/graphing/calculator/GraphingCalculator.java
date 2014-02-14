@@ -11,7 +11,7 @@ public class GraphingCalculator {
      * @param args the command line arguments
      */
     public static void main(String[] args) {
-        String function = "2 + 2x + 4";
+        String function = "( 2 + 2x ) ^ 2";
         Expression e = new Expression(function);
         
         System.out.println(e.getBaseFunction());
